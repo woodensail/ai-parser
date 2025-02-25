@@ -12,7 +12,7 @@ export default {
       sourcemap: true
     },
     {
-      file: "dist/index.esm", // ES 模块格式
+      file: "dist/index.mjs", // ES 模块格式
       format: "esm",
       sourcemap: true
     }

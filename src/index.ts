@@ -8,7 +8,7 @@ export interface ParserOption {
    */
   chunkParser?: (chunk: any, context: any) => any;
   /**
-   指定chunk内容的格式，当存在chunkParser时，忽略该参数。
+   指定chunk内容的格式。当存在chunkParser时，该参数影响chunkParser的chunk参数。
    * - 如果为`json`，chunk内容将被自动解析为JSON对象。
    * - 如果为`text`，chunk内容将直接返回为字符串。
    * @type {'json' | 'text'}
@@ -59,8 +59,7 @@ const PRESETS = {
   },
   DeepSeek: {
     chunkParser(chunk: string, context: any) {
-      const obj = JSON.parse(chunk.trim());
-      const chunkType = get(obj, 'choices[0].delta.content') as any
+      const chunkType = get(chunk, 'choices[0].delta.content') as any
       if (chunkType) {
         if (!context[chunkType]) {
           context[chunkType] = ''
@@ -74,8 +73,7 @@ const PRESETS = {
     chunkType: 'json', contentPath: 'answer', autoConcat: true, outputType: 'text',
   },
   DifyApp: {
-    chunkParser(chunk: string, context: any) {
-      const obj = JSON.parse(chunk.trim()) || {};
+    chunkParser(obj: any, context: any) {
       if (obj.event === 'node_started' && obj.data.node_type !== 'start') {
         context.current = obj.data.title || context.current;
       } else if (['iteration_started', 'iteration_next'].includes(obj.event)) {
@@ -125,7 +123,8 @@ export default class Parser {
 
           // 如果有自定义解析器，则执行自定义解析流程
           if (this.options.chunkParser) {
-            const result = this.options.chunkParser(data, context)
+            let chunk = this.options.chunkType === 'json'? JSON.parse(data.trim()) : data;
+            const result = this.options.chunkParser(chunk, context)
             yield result
             if (result instanceof Error) {
               console.error(result)
